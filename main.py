@@ -8,6 +8,7 @@ import requests
 import re
 import numpy as np
 import pandas as pd
+import schedule
 
 pd.set_option('display.width', 320)
 pd.set_option('display.max_colwidth', -1)
@@ -21,6 +22,7 @@ CONF = configparser.ConfigParser()
 CONF.read(configure)
 INSTANCE = {"username": CONF.get("userinfo", "username"),
             "password": CONF.get("userinfo", "password")}
+HEARTBEAT = CONF.getint("joblist", "heartbeat")
 
 BYR_HEADER = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -96,7 +98,7 @@ def get_page(session, url, **kwargs):
 
 
 @with_byr
-def get_parttimejob_list(session, page_start=1, page_end=5, step_time=3, day_last=2):
+def get_parttimejob_list(session, page_start=1, page_end=3, step_time=3, day_last=2):
     """
     :return: jobs info dataframe: columns("job_id","job_type","company","job_name","start_time")
     """
@@ -164,17 +166,34 @@ def get_parttimejob_list(session, page_start=1, page_end=5, step_time=3, day_las
     return job_df
 
 
-def load_mail_list(listfile=CONF.get("client","mail_list_db")):
-    df=pd.read_csv(listfile,
-                   encoding="utf-8",
-                   names=["address"],
-                   header=None,
-                   dtype="str")
-    mail_list=list(df["address"])   # do not use tuple here since yagmail's converter with bug
+def load_mail_list(listfile=CONF.get("client", "mail_list_db")):
+    df = pd.read_csv(listfile,
+                     encoding="utf-8",
+                     names=["address"],
+                     header=None,
+                     dtype="str")
+    mail_list = list(df["address"])  # do not use tuple here since yagmail's converter with bug
     return mail_list
 
+
+def with_heartbeat(fn):
+    # timedtask wrapper
+    def call_func(*args):
+        loop = 0
+        schedule.every(HEARTBEAT).seconds.do(fn, *args)
+        while 1:
+            print("#" * 15, "loop:%s" % loop, "#" * 15)
+            schedule.run_pending()
+            sleep(HEARTBEAT)
+            loop += 1
+
+    return call_func
+
+
+@with_heartbeat
 def run_batch():
-    # automatic job
+    empty_database()
+    # timed job
     job_list = get_parttimejob_list()
     if job_list.shape[0] == 0:
         print(" no new jobs")
@@ -185,10 +204,6 @@ def run_batch():
         print("sent")
 
 
-# todo:new database api,proxypool,email_list, specific info, user-defined filter,timeclock
-
 if __name__ == '__main__':
-    empty_database()  # todo: remove when deploy : as only for test
+    # empty_database()  # todo: remove when deploy : as only for test
     run_batch()
-
-
