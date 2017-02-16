@@ -14,6 +14,7 @@ pd.set_option('display.max_colwidth', -1)
 pd.set_option('float_format', '{:20,.4f}'.format)
 import configparser
 from file_set_db import scan_database, insert_batch, empty_database
+from mailbox import send_job_list
 
 configure = "byr.conf"
 CONF = configparser.ConfigParser()
@@ -95,7 +96,7 @@ def get_page(session, url, **kwargs):
 
 
 @with_byr
-def get_parttimejob_list(session, page_start=1, page_end=10, step_time=3, day_last=2):
+def get_parttimejob_list(session, page_start=1, page_end=5, step_time=3, day_last=2):
     """
     :return: jobs info dataframe: columns("job_id","job_type","company","job_name","start_time")
     """
@@ -133,9 +134,10 @@ def get_parttimejob_list(session, page_start=1, page_end=10, step_time=3, day_la
 
     # filter exists ones
     history_jobs = scan_database()
+    # print(history_jobs)
     new_job_list = [item for item in job_list if item[0] not in history_jobs]
     if not new_job_list:
-        return "no any new jobs"
+        return pd.DataFrame({})
     # append new ones to joblist database
     insert_batch([item[0] for item in new_job_list])
 
@@ -157,12 +159,36 @@ def get_parttimejob_list(session, page_start=1, page_end=10, step_time=3, day_la
     job_df["start_time"] = job_df["start_time"].apply(filter_day)
     job_df = job_df.dropna(axis=0)
     job_df["job_link"] = job_df["job_id"].apply(lambda id: "https://bbs.byr.cn/article/ParttimeJob/{0}".format(id))
+    job_df.to_csv("jobs.csv", encoding="utf-8", index=False)
+
     return job_df
 
 
-# todo:new database api,proxypool,email_list, specific info, user-defined filter
+def load_mail_list(listfile=CONF.get("client","mail_list_db")):
+    df=pd.read_csv(listfile,
+                   encoding="utf-8",
+                   names=["address"],
+                   header=None,
+                   dtype="str")
+    mail_list=list(df["address"])   # do not use tuple here since yagmail's converter with bug
+    return mail_list
+
+def run_batch():
+    # automatic job
+    job_list = get_parttimejob_list()
+    if job_list.shape[0] == 0:
+        print(" no new jobs")
+    else:
+        print("%s new job" % job_list.shape[0])
+        mail_list = load_mail_list()
+        send_job_list(mail_list, job_list)
+        print("sent")
+
+
+# todo:new database api,proxypool,email_list, specific info, user-defined filter,timeclock
 
 if __name__ == '__main__':
-    empty_database()
-    df = get_parttimejob_list()
-    print(df)
+    empty_database()  # todo: remove when deploy : as only for test
+    run_batch()
+
+

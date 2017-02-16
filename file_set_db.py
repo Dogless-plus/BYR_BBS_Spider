@@ -10,7 +10,7 @@ configure = "byr.conf"
 CONF = configparser.ConfigParser()
 CONF.read(configure)
 
-from os import listdir
+from os import listdir,sep
 from pickle import load, dump
 
 
@@ -18,6 +18,8 @@ def with_database(dbfile=CONF.get("filepath", "joblist_db")):
     # todo: may be some problem with dbfile : should be updated later
     def call_func(fn):
         def inner_call(*args, **kwargs):
+            # assert dbfile in the current basedir, this is a bug
+            # that you can not set the dbfile to another path
             if dbfile not in listdir("."):
                 with open(dbfile, "wb") as f:
                     empty = set()
