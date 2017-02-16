@@ -18,7 +18,8 @@
 三、注意事项
 目前支持gmail作为服务端，但是不支持作为客户端
 
-![image](https://github.com/Dogless-plus/BYR_BBS_Spider/raw/master/capture/im1.png)
+[效果图：邮件订阅]
+![image](https://github.com/Dogless-plus/BYR_BBS_Spider/blob/master/capture/im1.PNG)
 
 
 
