@@ -63,8 +63,8 @@ def send_job_list(contacts,df):
     row="<tr><td>{0}</td><td>{1}</td> <td>{2}</td><td>{3}</td><td>{4}</td></tr>"
     trs=[]
     trs.append(row.format("#","类型","公司","发布时间","具体工作"))
-    for line in df.itertuples():
-        tmp_row=row.format(line[0],line[2],line[3],line[5],r'<a href="{0}">{1}<a>'.format(line[6],line[4]))
+    for i,line in enumerate(df.itertuples()):
+        tmp_row=row.format(str(i),line[2],line[3],line[5],r'<a href="{0}">{1}<a>'.format(line[6],line[4]))
         trs.append(tmp_row)
     inner_trs=" ".join(trs)
 
