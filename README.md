@@ -25,6 +25,6 @@
 [效果图：实习列表_邮件订阅]
 ![image](https://github.com/Dogless-plus/BYR_BBS_Spider/blob/master/capture/im1.PNG)
 [效果图：论坛十大_邮件订阅]
-![image](https://github.com/Dogless-plus/BYR_BBS_Spider/blob/master/capture/topten.PNG)
+![image](https://github.com/Dogless-plus/BYR_BBS_Spider/blob/master/capture/topten.png)
 
 
